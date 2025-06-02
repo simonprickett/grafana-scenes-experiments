@@ -42,6 +42,50 @@ export function helloWorldScene() {
     'South West England',
   ];
 
+  const regionPanels: Array<SceneFlexItem> = regions.map((regionName) => 
+      (new SceneFlexItem({
+      width: '20%',
+      height: 150,
+      body: 
+        PanelBuilders
+          .stat()
+          .setTitle(regionName)
+          // TODO configure the colour values?
+          .setOption('reduceOptions', {
+            calcs: [
+              'lastNotNull'
+            ],
+            fields: 'intensity',                    
+          })
+          .setData(
+            new SceneDataTransformer({
+                $data: queryRunner1,
+                transformations: [
+                  {
+                    'id': 'filterByValue',
+                    'options': {
+                      'filters': [
+                        {
+                          'config': {
+                            'id': 'equal',
+                            'options': {
+                              'value': regionName
+                            }
+                          },
+                          'fieldName': 'shortname'
+                        }
+                      ],
+                      'match': 'any',
+                      'type': 'include'
+                    }
+                  }
+                ]
+              })
+          )
+          .build(),
+    }))
+  );
+
   // Get the intensity for North Scotland...
   const transformer1 = new SceneDataTransformer({
     $data: queryRunner1,
@@ -92,8 +136,6 @@ export function helloWorldScene() {
     ]
   });
 
-  console.log(regions);
-
   return new EmbeddedScene({
     $data: queryRunner1,
     body: new SceneFlexLayout({
@@ -105,81 +147,82 @@ export function helloWorldScene() {
           height: 150,
           body: PanelBuilders.text().setTitle('Simon Panel').setOption('content', 'Well would you look at that.').build(),
         }),
-        new SceneFlexItem({
-          width: '20%',
-          height: 150,
-          body: 
-            PanelBuilders
-              .stat()
-              .setTitle('North Scotland')
-              // TODO configure the colour values?
-              .setOption('reduceOptions', {
-                calcs: [
-                  'lastNotNull'
-                ],
-                fields: 'intensity',                    
-              })
-              .setData(transformer1)
-              .build(),
-        }),
-        new SceneFlexItem({
-          width: '20%',
-          height: 150,
-          body:           
-            PanelBuilders
-              .piechart()
-              .setTitle('North Scotland')
-              .setOption('reduceOptions', {
-                calcs: [
-                  'lastNotNull'
-                ],
-                fields: 'percentage',
-                values: true
-              })
-              .setOption('pieType', PieChartType.Donut)
-              .setOption('legend', {
-                showLegend: false
-              })
-              .setData(transformer1)
-              .build(),
-        }),
-        new SceneFlexItem({
-          width: '20%',
-          height: 150,
-          body: 
-            PanelBuilders
-              .stat()
-              .setTitle('South Wales')
-              .setOption('reduceOptions', {
-                calcs: [
-                  'lastNotNull'
-                ],
-                fields: 'intensity',                    
-              })
-              .setData(transformer2)
-              .build(),
-        }),
-        new SceneFlexItem({
-          width: '20%',
-          height: 150,
-          body:           
-            PanelBuilders
-              .piechart()
-              .setTitle('South Wales')
-              .setOption('reduceOptions', {
-                calcs: [
-                  'lastNotNull'
-                ],
-                fields: 'percentage',
-                values: true
-              })
-              .setOption('pieType', PieChartType.Donut)
-              .setOption('legend', {
-                showLegend: false
-              })
-              .setData(transformer2)
-              .build(),
-        }),
+        ...regionPanels,
+        // new SceneFlexItem({
+        //   width: '20%',
+        //   height: 150,
+        //   body: 
+        //     PanelBuilders
+        //       .stat()
+        //       .setTitle('North Scotland')
+        //       // TODO configure the colour values?
+        //       .setOption('reduceOptions', {
+        //         calcs: [
+        //           'lastNotNull'
+        //         ],
+        //         fields: 'intensity',                    
+        //       })
+        //       .setData(transformer1)
+        //       .build(),
+        // }),
+        // new SceneFlexItem({
+        //   width: '20%',
+        //   height: 150,
+        //   body:           
+        //     PanelBuilders
+        //       .piechart()
+        //       .setTitle('North Scotland')
+        //       .setOption('reduceOptions', {
+        //         calcs: [
+        //           'lastNotNull'
+        //         ],
+        //         fields: 'percentage',
+        //         values: true
+        //       })
+        //       .setOption('pieType', PieChartType.Donut)
+        //       .setOption('legend', {
+        //         showLegend: false
+        //       })
+        //       .setData(transformer1)
+        //       .build(),
+        // }),
+        // new SceneFlexItem({
+        //   width: '20%',
+        //   height: 150,
+        //   body: 
+        //     PanelBuilders
+        //       .stat()
+        //       .setTitle('South Wales')
+        //       .setOption('reduceOptions', {
+        //         calcs: [
+        //           'lastNotNull'
+        //         ],
+        //         fields: 'intensity',                    
+        //       })
+        //       .setData(transformer2)
+        //       .build(),
+        // }),
+        // new SceneFlexItem({
+        //   width: '20%',
+        //   height: 150,
+        //   body:           
+        //     PanelBuilders
+        //       .piechart()
+        //       .setTitle('South Wales')
+        //       .setOption('reduceOptions', {
+        //         calcs: [
+        //           'lastNotNull'
+        //         ],
+        //         fields: 'percentage',
+        //         values: true
+        //       })
+        //       .setOption('pieType', PieChartType.Donut)
+        //       .setOption('legend', {
+        //         showLegend: false
+        //       })
+        //       .setData(transformer2)
+        //       .build(),
+        // }),
         new SceneFlexItem({
           width: '100%',
           height: 600,
