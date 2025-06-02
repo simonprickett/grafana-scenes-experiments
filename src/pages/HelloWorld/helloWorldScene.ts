@@ -1,4 +1,5 @@
 import { EmbeddedScene, SceneDataTransformer, SceneFlexLayout, SceneFlexItem, SceneQueryRunner, PanelBuilders } from '@grafana/scenes';
+import { PieChartType } from '@grafana/schema/dist/esm/raw/composable/piechart/panelcfg/x/PieChartPanelCfg_types.gen';
 
 export function helloWorldScene() {
   const queryRunner1 = new SceneQueryRunner({
@@ -116,7 +117,7 @@ export function helloWorldScene() {
                 fields: 'percentage',
                 values: true
               })
-              // TODO set pieType to donut
+              .setOption('pieType', PieChartType.Donut)
               .setOption('legend', {
                 showLegend: false
               })
@@ -153,7 +154,7 @@ export function helloWorldScene() {
                 fields: 'percentage',
                 values: true
               })
-              // TODO set pieType to donut
+              .setOption('pieType', PieChartType.Donut)
               .setOption('legend', {
                 showLegend: false
               })
