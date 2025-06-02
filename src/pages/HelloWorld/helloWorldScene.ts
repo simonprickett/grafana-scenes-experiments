@@ -26,6 +26,22 @@ export function helloWorldScene() {
     ],
   });
 
+  // This should come from the data really...
+  const regions = [
+    'North Scotland',
+    'South Scotland',
+    'North West England',
+    'North East England',
+    'Yorkshire',
+    'South East England',
+    'North Wales & Merseyside',
+    'South Wales',
+    'West Midlands',
+    'East Midlands',
+    'East England',
+    'South West England',
+  ];
+
   // Get the intensity for North Scotland...
   const transformer1 = new SceneDataTransformer({
     $data: queryRunner1,
@@ -51,7 +67,7 @@ export function helloWorldScene() {
     ]
   });
 
-  // And the  intensity for South Wales...
+  // And the intensity for South Wales...
   const transformer2 = new SceneDataTransformer({
     $data: queryRunner1,
     transformations: [
@@ -76,10 +92,13 @@ export function helloWorldScene() {
     ]
   });
 
+  console.log(regions);
+
   return new EmbeddedScene({
     $data: queryRunner1,
     body: new SceneFlexLayout({
-      direction: 'column',
+      direction: 'row',
+      wrap: 'wrap',
       children: [
         new SceneFlexItem({
           width: '100%',
