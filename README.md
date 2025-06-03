@@ -1,5 +1,30 @@
 # Grafana Scenes App Plugin Template
 
+## TLDR Get Going
+
+In one terminal window:
+
+```bash
+docker compose up
+```
+
+In another (note: use Node 22):
+
+```bash
+npm run dev
+```
+
+The code I'm working from is in `src/pages/HelloWorld/helloWorldScene.ts`.
+
+View the app in a browser at:
+
+```
+http://localhost:3000/a/simonprickett-myplugin-app/hello-world
+```
+
+
+## Introduction
+
 This template is a starting point for building an app plugin with [scenes](https://grafana.com/developers/scenes) for Grafana.
 
 ## What are Grafana app plugins?
