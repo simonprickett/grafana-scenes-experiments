@@ -1,4 +1,5 @@
 import { EmbeddedScene, SceneDataTransformer, SceneFlexLayout, SceneFlexItem, SceneQueryRunner, PanelBuilders } from '@grafana/scenes';
+import { MappingType } from '@grafana/schema';
 import { PieChartType } from '@grafana/schema/dist/esm/raw/composable/piechart/panelcfg/x/PieChartPanelCfg_types.gen';
 
 export function helloWorldScene() {
@@ -69,13 +70,35 @@ export function helloWorldScene() {
 
     return [ 
       new SceneFlexItem({
-        width: '20%',
+        width: '25%',
         height: 150,
         body: 
           PanelBuilders
             .stat()
             .setTitle(regionName)
-            // TODO configure the colour values?
+            .setMappings([
+            {
+              options: {
+                high: {
+                  color: "orange",
+                },
+                low: {
+                  color: "green",
+                },
+                moderate: {
+                  color: "yellow",
+                },
+                'very high': {
+                  color: "red",
+                },
+                'very low': {
+                  color: "green",
+                }
+              },
+              type: MappingType.ValueToText
+            }
+
+            ])
             .setOption('reduceOptions', {
               calcs: [
                 'lastNotNull'
@@ -86,7 +109,7 @@ export function helloWorldScene() {
             .build(),
       }),
       new SceneFlexItem({
-        width: '20%',
+        width: '25%',
         height: 150,
         body:           
           PanelBuilders
