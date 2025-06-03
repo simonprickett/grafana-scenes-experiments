@@ -48,21 +48,21 @@ export function helloWorldScene() {
       $data: queryRunner1,
       transformations: [
         {
-          'id': 'filterByValue',
-          'options': {
-            'filters': [
+          id: 'filterByValue',
+          options: {
+            filters: [
               {
-                'config': {
-                  'id': 'equal',
-                  'options': {
-                    'value': regionName
+                config: {
+                  id: 'equal',
+                  options: {
+                    value: regionName
                   }
                 },
-                'fieldName': 'shortname'
+                fieldName: 'shortname'
               }
             ],
-            'match': 'any',
-            'type': 'include'
+            match: 'any',
+            type: 'include'
           }
         }
       ]
@@ -70,7 +70,7 @@ export function helloWorldScene() {
 
     return [ 
       new SceneFlexItem({
-        width: '25%',
+        width: '24%',
         height: 150,
         body: 
           PanelBuilders
@@ -109,7 +109,7 @@ export function helloWorldScene() {
             .build(),
       }),
       new SceneFlexItem({
-        width: '25%',
+        width: '24%',
         height: 150,
         body:           
           PanelBuilders
