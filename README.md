@@ -22,6 +22,7 @@ View the app in a browser at:
 http://localhost:3000/a/simonprickett-myplugin-app/hello-world
 ```
 
+The view in the browser will automatically refresh as you save changes to the code.
 
 ## Introduction
 
