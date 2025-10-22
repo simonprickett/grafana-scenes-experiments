@@ -394,6 +394,11 @@ export function helloWorldScene() {
             })
             .build()
         }),
+        // TODO now we want the following per region:
+        // - A stat panel with the carbon intensity number and forecast.
+        // - A bar gauge, LCD style all greens for the renewables info.
+        // - A regular gauge for renewables.
+        // - A regular gauge for fossil fuels.
         // TODO this can be removed long term., for now it is useful for debugging data..
         new SceneFlexItem({
           width: '100%',
