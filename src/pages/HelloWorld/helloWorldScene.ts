@@ -1,5 +1,5 @@
 import { EmbeddedScene, SceneDataTransformer, SceneFlexLayout, SceneFlexItem, SceneQueryRunner, PanelBuilders, /*SceneGridRow*/ } from '@grafana/scenes';
-import { MappingType, BigValueColorMode, BigValueTextMode, ThresholdsMode } from '@grafana/schema';
+import { MappingType, BigValueColorMode, BigValueTextMode, ThresholdsMode, VizOrientation, BarGaugeDisplayMode, BarGaugeValueMode } from '@grafana/schema';
 
 export function helloWorldScene() {
   const queryRunner1 = new SceneQueryRunner({
@@ -280,11 +280,120 @@ export function helloWorldScene() {
             })
             .setOption('textMode', BigValueTextMode.Value)
             .setOption('colorMode', BigValueColorMode.None)
-            // TODO: set text color
             .build()
         }),
         ...countryStats,
         ...countryGauges,
+        new SceneFlexItem({
+          width: '48.5%',
+          height: 400,
+          $data: new SceneDataTransformer({
+            $data: queryRunner1,
+            transformations: [
+              {
+                id: 'filterFieldsByName',
+                options: {
+                  include: {
+                    names: [
+                      'shortname',
+                      'forecast'
+                    ]
+                  }
+                }
+              },
+              {
+                id: 'sortBy',
+                options: {
+                  fields: {},
+                  sort: [
+                    {
+                      desc: true,
+                      field: 'forecast'
+                    }
+                  ]
+                }
+              }
+            ]
+          }),
+          body: PanelBuilders
+            .bargauge()
+            .setTitle('Carbon Intensity by Region')
+            .setOption('orientation', VizOrientation.Horizontal)
+            .setOption('displayMode', BarGaugeDisplayMode.Lcd)
+            .setOption('valueMode', BarGaugeValueMode.Hidden)
+            .setOption('showUnfilled', true)
+            .setOption('reduceOptions', {
+              calcs: [],
+              fields: '',
+              values: true
+            })
+            .setColor({ mode: 'continuous-GrYlRd' })
+            .setThresholds({
+              mode: ThresholdsMode.Absolute,
+              steps: [
+                {
+                  color: 'red',
+                  value: 0
+                }
+              ]
+            })
+            .build()
+        }),
+        new SceneFlexItem({
+          width: '48.5%',
+          height: 400,
+          $data: new SceneDataTransformer({
+            $data: queryRunner1,
+            transformations: [
+              {
+                id: 'filterFieldsByName',
+                options: {
+                  include: {
+                    names: [
+                      'shortname',
+                      'renewables'
+                    ]
+                  }
+                }
+              },
+              {
+                id: 'sortBy',
+                options: {
+                  fields: {},
+                  sort: [
+                    {
+                      desc: true,
+                      field: 'renewables'
+                    }
+                  ]
+                }
+              }
+            ]
+          }),
+          body: PanelBuilders
+            .bargauge()
+            .setTitle('Renewables by Region')
+            .setOption('orientation', VizOrientation.Horizontal)
+            .setOption('displayMode', BarGaugeDisplayMode.Lcd)
+            .setOption('valueMode', BarGaugeValueMode.Hidden)
+            .setOption('showUnfilled', true)
+            .setOption('reduceOptions', {
+              calcs: [],
+              fields: '',
+              values: true
+            })
+            .setColor({ mode: 'continuous-GrYlRd' })
+            .setThresholds({
+              mode: ThresholdsMode.Absolute,
+              steps: [
+                {
+                  color: 'red',
+                  value: 0
+                }
+              ]
+            })
+            .build()
+        }),
         // TODO this can be removed long term., for now it is useful for debugging data..
         new SceneFlexItem({
           width: '100%',
