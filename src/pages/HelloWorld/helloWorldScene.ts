@@ -1,6 +1,7 @@
-import { EmbeddedScene, SceneDataTransformer, SceneFlexLayout, SceneFlexItem, SceneQueryRunner, PanelBuilders, /*SceneGridRow*/ } from '@grafana/scenes';
-import { MappingType, BigValueColorMode, BigValueTextMode, ThresholdsMode, VizOrientation, BarGaugeDisplayMode, BarGaugeValueMode } from '@grafana/schema';
+import { EmbeddedScene, SceneDataTransformer, SceneFlexLayout, SceneFlexItem, SceneQueryRunner, PanelBuilders } from '@grafana/scenes';
+import { MappingType, BigValueColorMode, BigValueTextMode, ThresholdsMode, VizOrientation, BarGaugeDisplayMode, BarGaugeValueMode, BarGaugeNamePlacement } from '@grafana/schema';
 
+// TODO there might be some general data error with North Wales & Merseyside, & ????
 export function helloWorldScene() {
   const queryRunner1 = new SceneQueryRunner({
     datasource: {
@@ -66,19 +67,22 @@ export function helloWorldScene() {
   });
 
   // This should come from the data really...
+  // Define regions so each can have a row of panels.
   const regions = [
     'North Scotland',
-    'South Scotland',
+    'South Scotland', 
     'North West England',
     'North East England',
     'Yorkshire',
-    'South East England',
     'North Wales & Merseyside',
     'South Wales',
     'West Midlands',
     'East Midlands',
     'East England',
+    'London',
     'South West England',
+    'South England',
+    'South East England',
   ];
 
   const countries = [
@@ -152,7 +156,7 @@ export function helloWorldScene() {
                   value: 0,
                 },
                 {
-                  color: 'light-green', 
+                  color: 'light-green',  // TODO check thresholds against original dashboard.
                   value: 30,
                 },
                 {
@@ -250,6 +254,284 @@ export function helloWorldScene() {
     ]
   });
 
+  const regionSpecifics: SceneFlexItem[] = regions.flatMap((regionName) => {
+    // TODO can we sort this out?
+    const transformer = new SceneDataTransformer({
+      $data: queryRunner1,
+      transformations: [
+        {
+          id: 'filterByValue',
+          options: {
+            filters: [
+              {
+                config: {
+                  id: 'equal',
+                  options: {
+                    value: regionName
+                  }
+                },
+                fieldName: 'shortname'
+              }
+            ],
+            match: 'any',
+            type: 'include'
+          }
+        }
+      ]
+    });
+
+    return [ 
+      // TODO now we want the following per region:
+      // - Some way of showing the region name.
+      // - A stat panel with the carbon intensity number and forecast.
+      // - A bar gauge, LCD style all greens for the renewables info.
+      // - A regular gauge for renewables.
+      // - A regular gauge for fossil fuels.
+      new SceneFlexItem({
+        width: '100%',
+        height: 300,
+        body: new SceneFlexLayout({
+          direction: 'row',
+          children: [
+          new SceneFlexItem({
+            width: '24%',
+            /*height: 200,*/
+            body: 
+              PanelBuilders
+                .stat()
+                .setTitle(regionName)
+                // TODO: Why can't the text be white for these?  It is on the reference dashboard.
+                // TODO: colors should be the same for both stats at all times, green wanders sometimes?
+                .setMappings([
+                {
+                  options: {
+                    high: {
+                      color: 'orange',
+                      index: 3
+                    },
+                    low: {
+                      color: 'green',
+                      index: 1
+                    },
+                    moderate: {
+                      color: 'yellow',
+                      index: 2
+                    },
+                    'very high': {
+                      color: 'red',
+                      index: 4
+                    },
+                    'very low': {
+                      color: 'dark-green',
+                      index: 0
+                    }
+                  },
+                  type: MappingType.ValueToText
+                }])
+                .setThresholds({
+                  mode: ThresholdsMode.Absolute,
+                  steps: [
+                    {
+                      color: 'dark-green',
+                      value: 0,
+                    },
+                    {
+                      color: 'green', 
+                      value: 30,
+                    },
+                    {
+                      color: 'yellow',
+                      value: 120,
+                    },
+                    {
+                      color: 'orange',
+                      value: 150,
+                    },
+                    {
+                      color: 'red',
+                      value: 200,
+                    },
+                  ],
+                })
+                .setColor({ mode: 'thresholds' })
+                .setOption('reduceOptions', {
+                  calcs: [
+                    'lastNotNull'
+                  ],
+                  fields: 'index|forecast'                   
+                })
+                .setOption('colorMode', BigValueColorMode.BackgroundSolid)
+                .setOption('textMode', BigValueTextMode.Value)
+                .setData(transformer)
+                .build(),
+          }),
+          // Electricity sources bar gauge.
+          new SceneFlexItem({
+            width: '24%',
+            height: 300,
+            $data: new SceneDataTransformer({
+              $data: queryRunner1,
+              transformations: [
+                {
+                  id: 'filterByValue',
+                  options: {
+                    filters: [
+                      {
+                        config: {
+                          id: 'equal',
+                          options: {
+                            value: regionName
+                          }
+                        },
+                        fieldName: 'shortname'
+                      }
+                    ],
+                    match: 'any',
+                    type: 'include'
+                  }
+                },
+                {
+                  id: 'filterFieldsByName',
+                  options: {
+                    include: {
+                      names: [
+                        'biomass',
+                        'gas',
+                        'hydro',
+                        'imports',
+                        'nuclear',
+                        'other',
+                        'solar',
+                        'wind'
+                      ]
+                    }
+                  }
+                },
+                {
+                  id: 'transpose',
+                  options: {
+                    firstFieldName: 'Fuel'
+                  }
+                },
+                {
+                  id: 'sortBy',
+                  options: {
+                    fields: {},
+                    sort: [
+                      {
+                        desc: true,
+                        field: regionName
+                      }
+                    ]
+                  }
+                },
+                {
+                  id: 'transpose',
+                  options: {}
+                }
+              ]
+            }),
+            body: PanelBuilders
+              .bargauge()
+              .setOption('orientation', VizOrientation.Horizontal)
+              .setOption('displayMode', BarGaugeDisplayMode.Lcd)
+              .setOption('valueMode', BarGaugeValueMode.Hidden)
+              .setOption('namePlacement', BarGaugeNamePlacement.Top)
+              .setOption('showUnfilled', true)
+              .setOption('reduceOptions', {
+                calcs: ['lastNotNull'],
+                fields: '',
+                values: false
+              })
+              .setColor({ mode: 'fixed', fixedColor: 'green' })
+              .setUnit('percent')
+              .build()
+          }),
+
+          // Renweables...
+          new SceneFlexItem({
+            width: '24%',
+            height: 300,
+            body: 
+              PanelBuilders.gauge()
+                .setTitle('Renewables')
+                .setOption('reduceOptions', {
+                  calcs: [
+                    'lastNotNull'
+                  ],
+                  fields: 'renewables'                   
+                })
+                .setThresholds({
+                  mode: ThresholdsMode.Absolute,
+                  steps: [
+                    {
+                      color: 'red',
+                      value: 0,
+                    },
+                    {
+                      color: 'orange', 
+                      value: 30,
+                    },
+                    {
+                      color: 'yellow',
+                      value: 40,
+                    },
+                    {
+                      color: 'green',
+                      value: 60,
+                    },
+                  ],
+                })
+                .setUnit('percent')
+                .setData(transformer)
+                .build()
+          }),
+
+          // Fossil Fuels
+          new SceneFlexItem({
+            width: '24%',
+            height: 300,
+            body: 
+              PanelBuilders.gauge()
+                .setTitle('Fossil Fuels')
+                .setOption('reduceOptions', {
+                  calcs: [
+                    'lastNotNull'
+                  ],
+                  fields: 'gas'                   
+                })
+                .setThresholds({
+                  mode: ThresholdsMode.Absolute,
+                  steps: [
+                    {
+                      color: 'green',
+                      value: 0,
+                    },
+                    {
+                      color: 'yellow', 
+                      value: 30,
+                    },
+                    {
+                      color: 'orange',
+                      value: 40,
+                    },
+                    {
+                      color: 'red',
+                      value: 60,
+                    },
+                  ],
+                })
+                .setUnit('percent')
+                .setData(transformer)
+                .build()
+          }),
+
+          ]
+        })
+      }),
+    ]
+  });
+
   return new EmbeddedScene({
     $data: queryRunner1,
     body: new SceneFlexLayout({
@@ -282,8 +564,8 @@ export function helloWorldScene() {
             .setOption('colorMode', BigValueColorMode.None)
             .build()
         }),
-        ...countryStats,
-        ...countryGauges,
+        ...countryStats, // TODO should these go in their own layout?
+        ...countryGauges, // TODO should these go in their own layout?
         new SceneFlexItem({
           width: '48.5%',
           height: 400,
@@ -328,15 +610,6 @@ export function helloWorldScene() {
               values: true
             })
             .setColor({ mode: 'continuous-GrYlRd' })
-            .setThresholds({
-              mode: ThresholdsMode.Absolute,
-              steps: [
-                {
-                  color: 'red',
-                  value: 0
-                }
-              ]
-            })
             .build()
         }),
         new SceneFlexItem({
@@ -394,16 +667,16 @@ export function helloWorldScene() {
             })
             .build()
         }),
-        // TODO now we want the following per region:
-        // - A stat panel with the carbon intensity number and forecast.
-        // - A bar gauge, LCD style all greens for the renewables info.
-        // - A regular gauge for renewables.
-        // - A regular gauge for fossil fuels.
+        ...regionSpecifics,        
         // TODO this can be removed long term., for now it is useful for debugging data..
         new SceneFlexItem({
           width: '100%',
           height: 600,
-          body: PanelBuilders.table().setTitle('Data').setData(queryRunner1).build(),
+          body: PanelBuilders
+            .table()
+            .setTitle('Raw Data')
+            .setData(queryRunner1)
+            .build(),
         })
       ],
     }),
