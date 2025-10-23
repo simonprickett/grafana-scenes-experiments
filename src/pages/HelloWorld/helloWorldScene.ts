@@ -125,25 +125,28 @@ export function helloWorldScene() {
           PanelBuilders
             .stat()
             .setTitle(countryName)
-            // TODO: Why can't the text be white for these?  It is on the reference dashboard.
-            // TODO: colors should be the same for both stats at all times, green wanders sometimes?
             .setMappings([
             {
               options: {
                 high: {
                   color: 'orange',
+                  index: 3
                 },
                 low: {
                   color: 'green',
+                  index: 1
                 },
                 moderate: {
                   color: 'yellow',
+                  index: 2
                 },
                 'very high': {
                   color: 'red',
+                  index: 4
                 },
                 'very low': {
-                  color: 'green',
+                  color: 'dark-green',
+                  index: 0
                 }
               },
               type: MappingType.ValueToText
@@ -152,11 +155,11 @@ export function helloWorldScene() {
               mode: ThresholdsMode.Absolute,
               steps: [
                 {
-                  color: 'green',
+                  color: 'dark-green',
                   value: 0,
                 },
                 {
-                  color: 'light-green',  // TODO check thresholds against original dashboard.
+                  color: 'green', 
                   value: 30,
                 },
                 {
@@ -300,8 +303,6 @@ export function helloWorldScene() {
               PanelBuilders
                 .stat()
                 .setTitle(regionName)
-                // TODO: Why can't the text be white for these?  It is on the reference dashboard.
-                // TODO: colors should be the same for both stats at all times, green wanders sometimes?
                 .setMappings([
                 {
                   options: {
@@ -366,6 +367,7 @@ export function helloWorldScene() {
                 .build(),
           }),
           // Electricity sources bar gauge.
+          // TODO this needs to be sorted.
           new SceneFlexItem({
             width: '24%',
             height: 300,
