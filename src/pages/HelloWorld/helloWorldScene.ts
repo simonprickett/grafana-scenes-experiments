@@ -81,13 +81,24 @@ export function helloWorldScene() {
         source: 'url',
         parser: 'jq-backend',
         root_selector: `
-          [.ctatt.eta[] | . as $v | {        
+          . as $root | [.ctatt.eta[] | . as $v | {        
             arrival_time: $v.arrT,        
-            minutes_until_arrival: (((($v.arrT | sub("T"; " ") | strptime("%Y-%m-%d %H:%M:%S") | mktime) - now) / 60 | floor) + 300),      
+                minutes_until_arrival: (
+                (
+                  (
+                    ($v.arrT | sub("T"; " ") | strptime("%Y-%m-%d %H:%M:%S") | mktime)
+                    -
+                    ($root.ctatt.tmst | sub("T"; " ") | strptime("%Y-%m-%d %H:%M:%S") | mktime)
+                  ) / 60
+                  | floor
+                )
+                | if . < 0 then 0 else . end
+              ),    
             destination: $v.destNm,        
             station: $v.staNm,      
             latitude: $v.lat,      
             longitude: $v.lon,      
+            run_number: $v.rn,
             line_color: (        
               if $v.rt == "Org" then "Orange"        
               elif $v.rt == "Pink" or $v.rt == "Pnk" or $v.rt == "P" then "Pink"        
@@ -100,10 +111,22 @@ export function helloWorldScene() {
               else $v.rt        
               end        
             ),        
+            line_color_code: (
+              if $v.rt == "Org" then "rgb(249, 70, 28)"
+              elif $v.rt == "Pink" or $v.rt == "Pnk" or $v.rt == "P" then "rgb(226, 126, 166)"
+              elif $v.rt == "G" or $v.rt == "Grn" then "rgb(0, 169, 79)"
+              elif $v.rt == "Red" then "rgb(200, 16, 46)"
+              elif $v.rt == "Blue" or $v.rt == "Blu" then "rgb(0, 161, 222)"
+              elif $v.rt == "Brn" then "rgb(118, 66, 0)"
+              elif $v.rt == "Y" or $v.rt == "Ylw" then "rgb(249, 227, 0)"
+              elif $v.rt == "Pexp" or $v.rt == "Purp" then "rgb(82, 35, 152)"
+              else "rgb(128, 128, 128)"
+              end
+            ),
             is_approaching: ($v.isApp == "1"),        
             is_delayed: ($v.isDly == "1"),        
             platform: (($v.stpDe // "Unknown") | sub("^Service at "; "") | sub(" platform$"; ""))         
-          } | select(.platform == "Outer Loop")] | sort_by(.arrival_time) | to_entries | .[] | .value + {row_number: (.key + 1)}  
+          } ] | sort_by(.arrival_time) | to_entries | .[] | .value + {row_number: (.key + 1)}   
         `
       },
     ],
