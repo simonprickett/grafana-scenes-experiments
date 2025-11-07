@@ -9,10 +9,11 @@ import { helloWorldPage } from '../../pages/HelloWorld/helloWorldPage';
 import { homePage } from '../../pages/Home/homePage';
 import { withDrilldownPage } from '../../pages/WithDrilldown/withDrilldownPage';
 import { withTabsPage } from '../../pages/WithTabs/withTabsPage';
+import { chicagoLPage } from '../../pages/ChicagoL/chicagoLPage';
 
 function getSceneApp() {
   return new SceneApp({
-    pages: [helloWorldPage, homePage, withDrilldownPage, withTabsPage],
+    pages: [helloWorldPage, homePage, withDrilldownPage, withTabsPage, chicagoLPage],
     urlSyncOptions: {
       updateUrlOnInit: true,
       createBrowserHistorySteps: true,

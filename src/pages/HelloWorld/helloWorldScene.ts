@@ -1,7 +1,7 @@
 import { EmbeddedScene, SceneDataTransformer, SceneFlexLayout, SceneFlexItem, SceneQueryRunner, PanelBuilders } from '@grafana/scenes';
 import { MappingType, BigValueColorMode, BigValueTextMode, ThresholdsMode, VizOrientation, BarGaugeDisplayMode, BarGaugeValueMode, BarGaugeNamePlacement } from '@grafana/schema';
 
-// TODO there might be some general data error with North Wales & Merseyside, & ????
+// TODO: Forecast colors for intensity index are a bit out.  100 is considered moderate.
 export function helloWorldScene() {
   const queryRunner1 = new SceneQueryRunner({
     datasource: {
@@ -61,6 +61,49 @@ export function helloWorldScene() {
               (.to   | strptime("%Y-%m-%dT%H:%MZ") | strftime("%H:%M") + " UTC") 
             )
           }
+        `
+      },
+    ],
+  });
+
+  const queryRunnerChicago = new SceneQueryRunner({
+    datasource: {
+      type: 'yesoreyeram-infinity-datasource',
+      // TODO: This requires an instance of infinity datasource to be created with
+      // this name, but should we really need that given all the information is below?
+      uid: 'carbon-intensity-data-source'
+    },
+    queries: [
+      {
+        refId: 'A',
+        url: 'https://lapi.transitchicago.com/api/1.0/ttarrivals.aspx?mapid=40680&outputType=JSON&key=5bf50badfc9f4bd48c9d694823ddb07b', // TODO how to hide this?
+        method: 'GET',
+        source: 'url',
+        parser: 'jq-backend',
+        root_selector: `
+          [.ctatt.eta[] | . as $v | {        
+            arrival_time: $v.arrT,        
+            minutes_until_arrival: (((($v.arrT | sub("T"; " ") | strptime("%Y-%m-%d %H:%M:%S") | mktime) - now) / 60 | floor) + 300),      
+            destination: $v.destNm,        
+            station: $v.staNm,      
+            latitude: $v.lat,      
+            longitude: $v.lon,      
+            line_color: (        
+              if $v.rt == "Org" then "Orange"        
+              elif $v.rt == "Pink" or $v.rt == "Pnk" or $v.rt == "P" then "Pink"        
+              elif $v.rt == "G" or $v.rt == "Grn" then "Green"        
+              elif $v.rt == "Red" then "Red"        
+              elif $v.rt == "Blue" or $v.rt == "Blu" then "Blue"        
+              elif $v.rt == "Brn" then "Brown"        
+              elif $v.rt == "Y" or $v.rt == "Ylw" then "Yellow"        
+              elif $v.rt == "Pexp" or $v.rt == "Purp" then "Purple"        
+              else $v.rt        
+              end        
+            ),        
+            is_approaching: ($v.isApp == "1"),        
+            is_delayed: ($v.isDly == "1"),        
+            platform: (($v.stpDe // "Unknown") | sub("^Service at "; "") | sub(" platform$"; ""))         
+          } | select(.platform == "Outer Loop")] | sort_by(.arrival_time) | to_entries | .[] | .value + {row_number: (.key + 1)}  
         `
       },
     ],
@@ -368,6 +411,7 @@ export function helloWorldScene() {
           }),
           // Electricity sources bar gauge.
           // TODO this needs to be sorted.
+          // TODO this may also have redundant transforms.
           new SceneFlexItem({
             width: '24%',
             height: 300,
@@ -540,6 +584,149 @@ export function helloWorldScene() {
       direction: 'row',
       wrap: 'wrap',
       children: [
+        (() => {
+          const statPanel = PanelBuilders
+            .stat()
+            .setTitle('Chicago L Test Panel')
+            .setOption('reduceOptions', {
+              calcs: ['firstNotNull'],
+              fields: 'destination'
+            })
+            .setOption('textMode', BigValueTextMode.Value)
+            .setOption('colorMode', BigValueColorMode.BackgroundSolid)
+            .setData(queryRunnerChicago) 
+            .build();
+
+          const getLineColorRGB = (lineColor: string): string => {
+            const colorMap: Record<string, string> = {
+              Brown: 'rgb(118, 66, 0)',
+              Green: 'rgb(0, 169, 79)',
+              Red: 'rgb(200, 16, 46)',
+              Blue: 'rgb(0, 161, 222)',
+              Orange: 'rgb(249, 70, 28)',
+              Pink: 'rgb(226, 126, 166)',
+              Yellow: 'rgb(249, 227, 0)',
+              Purple: 'rgb(82, 35, 152)'
+            };
+            
+            return colorMap[lineColor] || 'rgb(128, 128, 128)'; // Default gray for unknown colors
+          };
+
+          queryRunnerChicago.subscribeToState((state) => {
+            const data = state.data;
+            if (data?.series && data.series.length > 0) {
+              const series = data.series[0];
+              const lineColorField = series.fields.find(f => f.name === 'line_color');
+
+              if (lineColorField && lineColorField.values.length > 0) {
+                const lineColorValue = lineColorField.values[0];
+
+                statPanel.setState({
+                  ...statPanel.state,
+                  fieldConfig: {
+                    ...statPanel.state.fieldConfig,
+                    defaults: {
+                      ...statPanel.state.fieldConfig?.defaults,
+                        thresholds: {
+                        mode: ThresholdsMode.Absolute,
+                        steps: [
+                          { color: getLineColorRGB(lineColorValue), value: 0 }
+                        ]
+                      }
+                    }
+                  }
+                });
+              }
+            }
+          });
+
+          return new SceneFlexItem({
+            width: '100%',
+            height: 300,
+            body: statPanel
+          });
+        })(),
+        // Dynamic stat panel with data-driven modifications
+        (() => {
+          const statPanel = PanelBuilders
+            .stat()
+            .setTitle('Dynamic Index Panel')
+            .setOption('reduceOptions', {
+              calcs: ['firstNotNull'],
+              fields: 'index'
+            })
+            .setOption('textMode', BigValueTextMode.Value)
+            .build();
+
+          // Subscribe to queryRunner1 data changes to modify panel properties
+          queryRunner1.subscribeToState((state) => {
+            const data = state.data;
+            if (data?.series && data.series.length > 0) {
+              const series = data.series[0];
+              console.log(data.series);
+              const indexField = series.fields.find(f => f.name === 'solar');
+              
+              if (indexField && indexField.values.length > 0) {
+                const firstIndexValue = indexField.values.get(0); // TODO use .at?
+                console.log('First index value:', firstIndexValue);
+                
+                
+                // Modify panel properties based on the data
+                if (firstIndexValue < 50) {
+                  // High carbon intensity - make it red and add alert styling
+                  statPanel.setState({
+                    ...statPanel.state,
+                    options: {
+                      ...statPanel.state.options,
+                      colorMode: BigValueColorMode.BackgroundSolid,
+                      textMode: BigValueTextMode.Value
+                    },
+                    fieldConfig: {
+                      ...statPanel.state.fieldConfig,
+                      defaults: {
+                        ...statPanel.state.fieldConfig?.defaults,
+                        thresholds: {
+                          mode: ThresholdsMode.Absolute,
+                          steps: [
+                            { color: 'red', value: 0 }
+                          ]
+                        }
+                      }
+                    }
+                  });
+                } else if (firstIndexValue >= 50) {
+                  // Low carbon intensity - make it green
+                  statPanel.setState({
+                    ...statPanel.state,
+                    options: {
+                      ...statPanel.state.options,
+                      colorMode: BigValueColorMode.BackgroundSolid,
+                      textMode: BigValueTextMode.Value
+                    },
+                    fieldConfig: {
+                      ...statPanel.state.fieldConfig,
+                      defaults: {
+                        ...statPanel.state.fieldConfig?.defaults,
+                        thresholds: {
+                          mode: ThresholdsMode.Absolute,
+                          steps: [
+                            { color: 'green', value: 0 }
+                          ]
+                        }
+                      }
+                    }
+                  });
+                }
+              }
+            }
+          });
+
+          return new SceneFlexItem({
+            width: '100%',
+            height: 120,
+            body: statPanel
+          });
+        })(),
         new SceneFlexItem({
           width: '100%',
           height: 80,
