@@ -1,4 +1,4 @@
-import { EmbeddedScene, SceneFlexLayout, SceneFlexItem, PanelBuilders, SceneQueryRunner } from '@grafana/scenes';
+import { EmbeddedScene, SceneFlexLayout, SceneFlexItem, PanelBuilders, SceneQueryRunner, SceneRefreshPicker, SceneControlsSpacer } from '@grafana/scenes';
 import { BigValueColorMode, BigValueTextMode, ThresholdsMode, MappingType, BigValueGraphMode } from '@grafana/schema';
 
 
@@ -80,6 +80,14 @@ export function chicagoLScene() {
 
   return new EmbeddedScene({
     $data: queryRunnerChicago,
+    controls: [
+      new SceneControlsSpacer(),
+      new SceneRefreshPicker({
+        intervals: ['30s', '1m', '5m', '10m', '30m'],
+        isOnCanvas: true,
+        refresh: '1m',
+      }),
+    ],
     body: new SceneFlexLayout({
       direction: 'row',
       wrap: 'wrap',
@@ -185,6 +193,15 @@ export function chicagoLScene() {
                   ]
                 }
               }
+            }
+          });
+
+          queryRunnerChicago.subscribeToState((state) => {
+            const data = state.data;
+            if (data?.series && data.series.length > 0) {
+              const series = data.series[0];
+              const minsToArrival = series.fields.find(f => f.name === 'minutes_until_arrival');
+              console.log(`ESTIMATED TIME PANEL DATA: ${minsToArrival?.values[0]}`);
             }
           });
 
