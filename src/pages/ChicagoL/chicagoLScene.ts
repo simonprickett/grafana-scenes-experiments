@@ -22,7 +22,7 @@ export function chicagoLScene() {
     queries: [
       {
         refId: 'A',
-        url: 'https://lapi.transitchicago.com/api/1.0/ttarrivals.aspx?mapid=40680&outputType=JSON&key=5bf50badfc9f4bd48c9d694823ddb07b', // TODO how to hide this?
+        url: 'https://lapi.transitchicago.com/api/1.0/ttarrivals.aspx?stpid=30033&outputType=JSON&key=5bf50badfc9f4bd48c9d694823ddb07b', // TODO how to hide this?
         method: 'GET',
         source: 'url',
         parser: 'jq-backend',
@@ -83,9 +83,9 @@ export function chicagoLScene() {
     controls: [
       new SceneControlsSpacer(),
       new SceneRefreshPicker({
-        intervals: ['30s', '1m', '5m', '10m', '30m'],
+        intervals: ['10s', '15s', '30s', '1m', '5m', '10m', '30m'],
         isOnCanvas: true,
-        refresh: '1m',
+        refresh: '15s',
       }),
     ],
     body: new SceneFlexLayout({
@@ -111,7 +111,7 @@ export function chicagoLScene() {
               ...platformPanel.state.fieldConfig,
               defaults: {
                 ...platformPanel.state.fieldConfig?.defaults,
-                noValue: 'Adams/Wabash (Outer Loop)'
+                noValue: 'Ashland'
               }
             }
           });
@@ -153,65 +153,128 @@ export function chicagoLScene() {
           });
         })(),
         (() => {
-          const arrivalPanel = PanelBuilders
-            .stat()
-            .setOption('reduceOptions', {
-              calcs: ['firstNotNull'],
-              fields: 'minutes_until_arrival'
-            })
-            .setOption('textMode', BigValueTextMode.Value)
-            .setOption('colorMode', BigValueColorMode.BackgroundSolid)
-            .setOption('graphMode', BigValueGraphMode.None)
-            .setData(queryRunnerChicago)
-            .build();
-
-          // Set up thresholds and unit
-          arrivalPanel.setState({
-            ...arrivalPanel.state,
-            fieldConfig: {
-              ...arrivalPanel.state.fieldConfig,
-              defaults: {
-                ...arrivalPanel.state.fieldConfig?.defaults,
-                unit: 'min',
-                mappings: [
-                  {
-                    type: MappingType.ValueToText,
-                    options: {
-                      '0': {
-                        text: 'Approaching'
-                      }
+          const buildArrivalPanel = (value: number | null | undefined) => {
+            if (value !== null && value !== undefined && value >= 2) {
+              // Let's use a gauge for 2+ minutes.
+              const arrivalGaugePanel = PanelBuilders
+              .gauge()
+              .setTitle('')
+              .setOption('reduceOptions', {
+                calcs: ['firstNotNull'],
+                fields: 'minutes_until_arrival'
+              })
+              .setData(queryRunnerChicago)
+              .build();
+  
+              arrivalGaugePanel.setState({
+                ...arrivalGaugePanel.state,
+                fieldConfig: {
+                  ...arrivalGaugePanel.state.fieldConfig,
+                  defaults: {
+                    ...arrivalGaugePanel.state.fieldConfig?.defaults,
+                    unit: 'min',
+                    min: 0,
+                    max: 10,
+                    thresholds: {
+                      mode: ThresholdsMode.Absolute,
+                      steps: [
+                        { color: 'red', value: 0 },
+                        { color: 'orange', value: 1 },
+                        { color: 'yellow', value: 2 },
+                        { color: 'green', value: 3 }
+                      ]
                     }
                   }
-                ],
-                thresholds: {
-                  mode: ThresholdsMode.Absolute,
-                  steps: [
-                    { color: 'red', value: 0 },
-                    { color: 'orange', value: 1 }, 
-                    { color: 'yellow', value: 2 },
-                    { color: 'green', value: 3 }
-                  ]
                 }
-              }
+              });
+
+              return arrivalGaugePanel;
+            } else {
+              // Let's use a stat panel.
+              const arrivalPanel = PanelBuilders
+              .stat()
+              .setOption('reduceOptions', {
+                calcs: ['firstNotNull'],
+                fields: 'minutes_until_arrival'
+              })
+              .setOption('textMode', BigValueTextMode.Value)
+              .setOption('colorMode', BigValueColorMode.BackgroundSolid)
+              .setOption('graphMode', BigValueGraphMode.None)
+              .setData(queryRunnerChicago)
+              .build();
+  
+              // Set up thresholds and unit
+              arrivalPanel.setState({
+                ...arrivalPanel.state,
+                fieldConfig: {
+                  ...arrivalPanel.state.fieldConfig,
+                  defaults: {
+                    ...arrivalPanel.state.fieldConfig?.defaults,
+                    unit: 'min',
+                    mappings: [
+                      {
+                        type: MappingType.ValueToText,
+                        options: {
+                          '0': {
+                            text: 'Approaching'
+                          }
+                        }
+                      }
+                    ],
+                    thresholds: {
+                      mode: ThresholdsMode.Absolute,
+                      steps: [
+                        { color: 'red', value: 0 },
+                        { color: 'orange', value: 1 }, 
+                        { color: 'yellow', value: 2 },
+                        { color: 'green', value: 3 }
+                      ]
+                    }
+                  }
+                }
+              });
+
+              return arrivalPanel;
             }
+          };
+
+          // Create the SceneFlexItem with an initial panel
+          const arrivalFlexItem = new SceneFlexItem({
+            width: '28%',
+            height: 300,
+            body: buildArrivalPanel(null)
           });
+
+          // Track the current panel type to avoid unnecessary rebuilds
+          let currentPanelType: 'gauge' | 'stat' | null = null;
 
           queryRunnerChicago.subscribeToState((state) => {
             const data = state.data;
             if (data?.series && data.series.length > 0) {
               const series = data.series[0];
               const minsToArrival = series.fields.find(f => f.name === 'minutes_until_arrival');
-              console.log(`ESTIMATED TIME PANEL DATA: ${minsToArrival?.values[0]}`);
+              const value = minsToArrival?.values[0];
+              console.log(`ESTIMATED TIME PANEL DATA: ${value} as ${typeof value}`);
+
+              // Determine which panel type we need
+              // Stat panel for 0, 1, or unknown; gauge for 2+ minutes
+              const needsPanelType = (value !== null && value !== undefined && value >= 2) ? 'gauge' : 'stat';
+
+              // Only swap if the panel type changed
+              console.log(`NEEDS PANEL TYPE: ${needsPanelType} as ${typeof needsPanelType}`);
+              console.log(`CURRENT PANEL TYPE: ${currentPanelType} as ${typeof currentPanelType}`);
+              if (needsPanelType !== currentPanelType) {
+                console.log(`SWAPPING PANEL TYPE FROM ${currentPanelType} TO ${needsPanelType}`);
+                currentPanelType = needsPanelType;
+                arrivalFlexItem.setState({
+                  body: buildArrivalPanel(value)
+                });
+              }
             }
           });
 
-          return new SceneFlexItem({
-            width: '28%',
-            height: 300,
-            body: arrivalPanel
-          });
-        })(),
-        
+          return arrivalFlexItem;
+        })(),        
         (() => {
           const firstDestinationPanel = PanelBuilders
             .stat()
