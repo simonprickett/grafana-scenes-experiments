@@ -1,4 +1,5 @@
-import { EmbeddedScene, SceneDataTransformer, SceneFlexLayout, SceneFlexItem, SceneQueryRunner, PanelBuilders } from '@grafana/scenes';
+import { EmbeddedScene, SceneDataTransformer, SceneFlexLayout, SceneFlexItem, SceneQueryRunner,   SceneRefreshPicker,      // Add this
+  SceneControlsSpacer, PanelBuilders } from '@grafana/scenes';
 import { MappingType, BigValueColorMode, BigValueTextMode, ThresholdsMode, VizOrientation, BarGaugeDisplayMode, BarGaugeValueMode, BarGaugeNamePlacement } from '@grafana/schema';
 
 // TODO: Forecast colors for intensity index are a bit out.  100 is considered moderate.
@@ -8,7 +9,7 @@ export function helloWorldScene() {
       type: 'yesoreyeram-infinity-datasource',
       // TODO: This requires an instance of infinity datasource to be created with
       // this name, but should we really need that given all the information is below?
-      uid: 'carbon-intensity-data-source'
+      uid: 'yesoreyeram-infinity-datasource'
     },
     queries: [
       {
@@ -44,7 +45,7 @@ export function helloWorldScene() {
       type: 'yesoreyeram-infinity-datasource',
       // TODO: This requires an instance of infinity datasource to be created with
       // this name, but should we really need that given all the information is below?
-      uid: 'carbon-intensity-data-source'
+      uid: 'yesoreyeram-infinity-datasource'
     },
     queries: [
       {
@@ -71,7 +72,7 @@ export function helloWorldScene() {
       type: 'yesoreyeram-infinity-datasource',
       // TODO: This requires an instance of infinity datasource to be created with
       // this name, but should we really need that given all the information is below?
-      uid: 'carbon-intensity-data-source'
+      uid: 'yesoreyeram-infinity-datasource'
     },
     queries: [
       {
@@ -603,6 +604,14 @@ export function helloWorldScene() {
 
   return new EmbeddedScene({
     $data: queryRunner1,
+    controls: [
+      new SceneControlsSpacer(),
+      new SceneRefreshPicker({
+        intervals: ['30s', '1m', '5m', '10m', '30m'],
+        isOnCanvas: true,
+        refresh: '1m',
+      }),
+    ],
     body: new SceneFlexLayout({
       direction: 'row',
       wrap: 'wrap',
@@ -690,7 +699,7 @@ export function helloWorldScene() {
               const indexField = series.fields.find(f => f.name === 'solar');
               
               if (indexField && indexField.values.length > 0) {
-                const firstIndexValue = indexField.values.get(0); // TODO use .at?
+                const firstIndexValue = indexField.values[0]; // TODO use .at?
                 console.log('First index value:', firstIndexValue);
                 
                 

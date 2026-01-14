@@ -17,7 +17,7 @@ export function chicagoLScene() {
       type: 'yesoreyeram-infinity-datasource',
       // TODO: This requires an instance of infinity datasource to be created with
       // this name, but should we really need that given all the information is below?
-      uid: 'carbon-intensity-data-source' // TODO rename this in Grafana config.
+      uid: 'yesoreyeram-infinity-datasource' // TODO rename this in Grafana config.
     },
     queries: [
       {
