@@ -10,10 +10,11 @@ import { homePage } from '../../pages/Home/homePage';
 import { withDrilldownPage } from '../../pages/WithDrilldown/withDrilldownPage';
 import { withTabsPage } from '../../pages/WithTabs/withTabsPage';
 import { chicagoLPage } from '../../pages/ChicagoL/chicagoLPage';
+import { londonTubePage } from '../../pages/LondonTube/londonTubePage';
 
 function getSceneApp() {
   return new SceneApp({
-    pages: [helloWorldPage, homePage, withDrilldownPage, withTabsPage, chicagoLPage],
+    pages: [helloWorldPage, homePage, withDrilldownPage, withTabsPage, chicagoLPage, londonTubePage],
     urlSyncOptions: {
       updateUrlOnInit: true,
       createBrowserHistorySteps: true,

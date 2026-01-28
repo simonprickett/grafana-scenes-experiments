@@ -8,6 +8,7 @@ export enum ROUTES {
   WithDrilldown = 'page-with-drilldown',
   HelloWorld = 'hello-world',
   ChicagoL = 'chicago-l',
+  LondonTube = 'london-tube',
 }
 
 export const DATASOURCE_REF = {
