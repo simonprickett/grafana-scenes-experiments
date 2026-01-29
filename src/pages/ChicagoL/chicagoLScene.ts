@@ -96,6 +96,7 @@ export function chicagoLScene() {
           const platformPanel = PanelBuilders
             .stat()
             .setTitle('')
+            .setDisplayMode('transparent')
             .setOption('reduceOptions', {
               calcs: ['firstNotNull'],
               fields: 'None'
@@ -126,6 +127,7 @@ export function chicagoLScene() {
           const departureNumberPanel = PanelBuilders
             .stat()
             .setTitle('')
+            .setDisplayMode('transparent')
             .setOption('reduceOptions', {
               calcs: ['firstNotNull'],
               fields: 'None'
@@ -159,6 +161,7 @@ export function chicagoLScene() {
               const arrivalGaugePanel = PanelBuilders
               .gauge()
               .setTitle('')
+              .setDisplayMode('transparent')
               .setOption('reduceOptions', {
                 calcs: ['firstNotNull'],
                 fields: 'minutes_until_arrival'
@@ -193,6 +196,7 @@ export function chicagoLScene() {
               // Let's use a stat panel.
               const arrivalPanel = PanelBuilders
               .stat()
+              .setDisplayMode('transparent')
               .setOption('reduceOptions', {
                 calcs: ['firstNotNull'],
                 fields: 'minutes_until_arrival'
@@ -279,6 +283,7 @@ export function chicagoLScene() {
           const firstDestinationPanel = PanelBuilders
             .stat()
             .setTitle('')
+            .setDisplayMode('transparent')
             .setOption('reduceOptions', {
               calcs: ['firstNotNull'],
               fields: 'destination'
